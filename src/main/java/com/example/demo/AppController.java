@@ -1,7 +1,6 @@
 package com.example.demo;
 
 import org.json.JSONObject;
-import org.json.JSONTokener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
@@ -9,6 +8,7 @@ import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 class AppController {
@@ -51,4 +51,14 @@ class AppController {
         model.addAttribute("country", new JSONObject(userDetails.getClaim("address").toString()).get("country"));
         return "profile";
     }
+
+    @GetMapping("/updateProfile")
+    public String updateProfile() throws Exception {
+
+        logger.info("updateProfile");
+        System.out.println("updateProfile");
+        return "redirect:/profile";
+    }
+
+
 }
