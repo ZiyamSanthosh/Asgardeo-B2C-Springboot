@@ -25,12 +25,8 @@ class AppController {
     @GetMapping("/")
     public String currentUserName(Model model, Authentication authentication) {
 
-        DefaultOidcUser userDetails = (DefaultOidcUser) authentication.getPrincipal();
-        model.addAttribute("userName", userDetails.getName());
-        model.addAttribute("IDTokenClaims", userDetails);
-        return "home";
+        return "index";
     }
-
 
     @GetMapping("/login")
     public String getLoginPage(Model model) {
