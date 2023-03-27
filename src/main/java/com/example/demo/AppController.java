@@ -43,7 +43,7 @@ class AppController {
         DefaultOidcUser userDetails = (DefaultOidcUser) authentication.getPrincipal();
         model.addAttribute("userName", userDetails.getName());
         model.addAttribute("IDTokenClaims", userDetails);
-        return "home";
+        return "redirect:/index";
     }
 
 //    @GetMapping("/logout")
