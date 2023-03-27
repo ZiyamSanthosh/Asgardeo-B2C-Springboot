@@ -19,6 +19,21 @@ class AppController {
     public String getProfile(Model model, Authentication authentication) {
 
         logger.info("index");
+        if (null == authentication) {
+            model.addAttribute("isAuthenticated", false);
+        } else {
+            model.addAttribute("isAuthenticated", authentication.isAuthenticated());
+            DefaultOidcUser userDetails = (DefaultOidcUser) authentication.getPrincipal();
+            model.addAttribute("username", userDetails.getClaim("username"));
+            String fullName = "";
+            if (null != userDetails.getClaim("given_name")) {
+                fullName += userDetails.getClaim("given_name");
+            }
+            if (null != userDetails.getClaim("family_name")) {
+                fullName += " " + userDetails.getClaim("family_name");
+            }
+            model.addAttribute("fullName", fullName);
+        }
         return "index";
     }
 
@@ -31,6 +46,12 @@ class AppController {
         return "home";
     }
 
+//    @GetMapping("/logout")
+//    public String getLogoutPage(Model model) {
+//
+//        logger.info("login");
+//        return "redirect:/oauth2/authorization/asgardeo";
+//    }
 
     @GetMapping("/login")
     public String getLoginPage(Model model) {
