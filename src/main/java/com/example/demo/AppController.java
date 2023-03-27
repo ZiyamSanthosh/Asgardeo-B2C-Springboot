@@ -69,7 +69,9 @@ class AppController {
         model.addAttribute("firstName", userDetails.getClaim("given_name"));
         model.addAttribute("lastName", userDetails.getClaim("family_name"));
         model.addAttribute("mobile", userDetails.getClaim("phone_number"));
-        model.addAttribute("country", new JSONObject(userDetails.getClaim("address").toString()).get("country"));
+        if (userDetails.getClaim("address") != null) {
+            model.addAttribute("country", new JSONObject(userDetails.getClaim("address").toString()).get("country"));
+        }
         return "profile";
     }
 
