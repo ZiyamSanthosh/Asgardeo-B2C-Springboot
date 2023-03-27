@@ -1,5 +1,7 @@
 package com.example.demo;
 
+import org.json.JSONObject;
+import org.json.JSONTokener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
@@ -35,5 +37,18 @@ class AppController {
 
         logger.info("login");
         return "redirect:/oauth2/authorization/asgardeo";
+    }
+
+    @GetMapping("/profile")
+    public String getProfilePage(Model model, Authentication authentication) {
+
+        logger.info("profile");
+        DefaultOidcUser userDetails = (DefaultOidcUser) authentication.getPrincipal();
+        model.addAttribute("username", userDetails.getClaim("username"));
+        model.addAttribute("firstName", userDetails.getClaim("given_name"));
+        model.addAttribute("lastName", userDetails.getClaim("family_name"));
+        model.addAttribute("mobile", userDetails.getClaim("phone_number"));
+        model.addAttribute("country", new JSONObject(userDetails.getClaim("address").toString()).get("country"));
+        return "profile";
     }
 }

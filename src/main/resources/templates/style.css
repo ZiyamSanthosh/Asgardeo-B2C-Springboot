@@ -1,0 +1,14 @@
+body {
+  margin: 20px;
+}
+
+#info-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+td {
+  border: 1px #dddddd;
+  text-align: left;
+  padding: 8px;
+}
