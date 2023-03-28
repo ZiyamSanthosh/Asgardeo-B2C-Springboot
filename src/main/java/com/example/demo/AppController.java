@@ -3,8 +3,13 @@ package com.example.demo;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
+import org.springframework.security.oauth2.provider.authentication.OAuth2AuthenticationDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,6 +18,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @Controller
 class AppController {
     Logger logger = LoggerFactory.getLogger(AppController.class);
+
+    @Autowired
+    private OAuth2AuthorizedClientService authorizedClientService;
 
     @GetMapping("/index")
     public String getProfile(Model model, Authentication authentication) {
@@ -65,10 +73,15 @@ class AppController {
     }
 
     @GetMapping("/updateProfile")
-    public String updateProfile() throws Exception {
+    public String updateProfile(Authentication authentication) throws Exception {
 
         logger.info("updateProfile");
         System.out.println("updateProfile");
+        OAuth2AuthenticationToken authenticationToken = (OAuth2AuthenticationToken) authentication;
+        String clientRegistrationId = authenticationToken.getAuthorizedClientRegistrationId();
+        String accessTokenValue = authorizedClientService.loadAuthorizedClient(clientRegistrationId, authentication.getName()).getAccessToken().getTokenValue();
+        logger.info("Access token: " + accessTokenValue);
+        logger.info("Client registration id: " + clientRegistrationId);
         return "redirect:/profile";
     }
 
