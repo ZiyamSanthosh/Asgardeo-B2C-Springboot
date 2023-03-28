@@ -14,6 +14,9 @@
             <span class="self-center text-xl font-semibold whitespace-nowrap dark:text-white">KFone LK</span>
         </a>
         <div class="flex items-center md:order-2">
+            <span th:if="${isAuthenticated}"
+                  th:text="${tier}" class="bg-yellow-100 text-yellow-800 text-xs font-medium mx-6 px-2.5 py-0.5 rounded dark:bg-gray-700 dark:text-yellow-300 border border-yellow-300"></span>
+
             <div th:if="${isAuthenticated}" data-popover-target="popover-description" class="px-4 py-3">
                 <span
                         th:text="${fullName}"
@@ -66,6 +69,14 @@
     </div>
 </nav>
 <div>
+    <div id="email-verify-banner" th:if="${isAuthenticated and !emailVerified}" class="mx-4 my-2 bg-orange-100 border border-orange-400 text-orange-700 px-4 py-3 rounded relative" role="alert">
+        <strong class="font-bold">Email is not verified!</strong>
+        <span class="block sm:inline">Please verify your email address.</span>
+        <span class="absolute top-0 bottom-0 right-0 px-4 py-3">
+    <svg class="fill-current h-6 w-6 text-red-500" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><title>Close</title><path
+            d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z"/></svg>
+  </span>
+    </div>
     <div class="grid grid-cols-4 gap-2 p-2">
         <div th:each="product: ${productList}"
              class="w-full max-w-sm bg-white border border-gray-200 rounded-lg shadow dark:bg-gray-800 dark:border-gray-700">
@@ -76,7 +87,7 @@
                 </a>
                 <p th:text="${product.description}" class="mb-3 font-normal text-gray-700 dark:text-gray-400"></p>
                 <div class="flex items-center justify-between">
-                    <span th:text="${product.price}" class="text-3xl font-bold text-gray-900 dark:text-white"></span>
+                    <span th:text="|$${product.price}|" class="text-3xl font-bold text-gray-900 dark:text-white"></span>
                     <a href="/add-to-cart" th:if="${isAuthenticated}"
                        class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
                         Add to cart
