@@ -32,6 +32,9 @@ class AppController {
     @Autowired
     private OAuth2AuthorizedClientService authorizedClientService;
 
+    @Autowired
+    private ProductService productService;
+
 
     @Value("${asgardeo.scim.me.endpoint}")
     private String scimMeEndpoint;
@@ -42,7 +45,7 @@ class AppController {
 
     @GetMapping("/index")
     public String getHomePage(Model model, Authentication authentication) {
-        List<Product> products = new ProductService().getProducts();
+        List<Product> products = productService.getProducts();
 
         logger.info("Rendering index page");
         if (authentication == null) {
