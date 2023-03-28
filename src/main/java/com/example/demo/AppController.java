@@ -12,14 +12,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 class AppController {
-
     Logger logger = LoggerFactory.getLogger(AppController.class);
 
     @GetMapping("/index")
     public String getProfile(Model model, Authentication authentication) {
 
-        logger.info("index");
-        if (null == authentication) {
+        logger.info("Rendering index page");
+        if (authentication == null) {
             model.addAttribute("isAuthenticated", false);
         } else {
             model.addAttribute("isAuthenticated", authentication.isAuthenticated());
@@ -40,30 +39,20 @@ class AppController {
     @GetMapping("/")
     public String currentUserName(Model model, Authentication authentication) {
 
-        DefaultOidcUser userDetails = (DefaultOidcUser) authentication.getPrincipal();
-        model.addAttribute("userName", userDetails.getName());
-        model.addAttribute("IDTokenClaims", userDetails);
         return "redirect:/index";
     }
-
-//    @GetMapping("/logout")
-//    public String getLogoutPage(Model model) {
-//
-//        logger.info("login");
-//        return "redirect:/oauth2/authorization/asgardeo";
-//    }
 
     @GetMapping("/login")
     public String getLoginPage(Model model) {
 
-        logger.info("login");
+        logger.info("Rendering login page");
         return "redirect:/oauth2/authorization/asgardeo";
     }
 
     @GetMapping("/profile")
     public String getProfilePage(Model model, Authentication authentication) {
 
-        logger.info("profile");
+        logger.info("Rendering profile page");
         DefaultOidcUser userDetails = (DefaultOidcUser) authentication.getPrincipal();
         model.addAttribute("username", userDetails.getClaim("username"));
         model.addAttribute("firstName", userDetails.getClaim("given_name"));
@@ -82,6 +71,5 @@ class AppController {
         System.out.println("updateProfile");
         return "redirect:/profile";
     }
-
 
 }
