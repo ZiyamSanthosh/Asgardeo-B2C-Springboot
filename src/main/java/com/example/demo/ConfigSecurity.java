@@ -26,7 +26,7 @@ public class ConfigSecurity extends WebSecurityConfigurerAdapter {
 
         logger.info("Configuring security");
         http.authorizeRequests()
-                .antMatchers( "/index", "/login")
+                .antMatchers( "/index", "/login", "/")
                 .permitAll()
                 .anyRequest()
                 .authenticated()
@@ -43,7 +43,6 @@ public class ConfigSecurity extends WebSecurityConfigurerAdapter {
                         this.clientRegistrationRepository);
 
         oidcLogoutSuccessHandler.setPostLogoutRedirectUri(postLogoutRedirectUri);
-
         return oidcLogoutSuccessHandler;
     }
 }
