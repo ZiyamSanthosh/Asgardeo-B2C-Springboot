@@ -67,6 +67,7 @@ class AppController {
             boolean emailVerified = getEmailVerifiedClaim(authentication, accessToken);
             logger.info("Email verified: " + emailVerified);
             model.addAttribute("emailVerified", emailVerified);
+            model.addAttribute("tier", getUserTier(authentication, accessToken));
 
         }
         model.addAttribute("productList", products);
@@ -146,11 +147,27 @@ class AppController {
         JSONObject response = callGetAPI(scimMeEndpoint, entity);
         JSONObject customSchemaAttributes = (JSONObject)response.get("urn:scim:wso2:schema");
         logger.info(customSchemaAttributes.toString());
-        if (customSchemaAttributes.get("emailVerified") == null) {
+        if (!customSchemaAttributes.has("emailVerified") || customSchemaAttributes.get("emailVerified") == null) {
             return false;
         }
         String emailVerified = (String) customSchemaAttributes.get("emailVerified");
         return Boolean.parseBoolean(emailVerified);
+    }
+
+    private String getUserTier(Authentication authentication, String accessToken) {
+
+        logger.info("GetUserTier");
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        headers.setBearerAuth(accessToken);
+        HttpEntity<String> entity = new HttpEntity<String>(headers);
+        JSONObject response = callGetAPI(scimMeEndpoint, entity);
+        JSONObject customSchemaAttributes = (JSONObject)response.get("urn:scim:wso2:schema");
+        logger.info(customSchemaAttributes.toString());
+        if (!customSchemaAttributes.has("tier") || customSchemaAttributes.get("tier") == null) {
+            return "";
+        }
+        return (String) customSchemaAttributes.get("tier");
     }
 
     private JSONObject callGetAPI(String url, HttpEntity<String> entity) {
