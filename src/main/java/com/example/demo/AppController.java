@@ -7,11 +7,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
+import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
@@ -62,6 +60,14 @@ class AppController {
                 fullName += " " + userDetails.getClaim("family_name");
             }
             model.addAttribute("fullName", fullName);
+            String accessToken = getAccessToken((OAuth2AuthenticationToken) authentication);
+            if (accessToken == null) {
+                return "redirect:/login";
+            }
+            boolean emailVerified = getEmailVerifiedClaim(authentication, accessToken);
+            logger.info("Email verified: " + emailVerified);
+            model.addAttribute("emailVerified", emailVerified);
+
         }
         model.addAttribute("productList", products);
         return "index";
@@ -82,9 +88,6 @@ class AppController {
 
     @GetMapping("/profile")
     public String getProfilePage(Model model, Authentication authentication) {
-
-        String accessToken = getAccessToken((OAuth2AuthenticationToken) authentication);
-        getEmailVerifiedClaim(authentication);
 
         logger.info("Rendering profile page");
         DefaultOidcUser userDetails = (DefaultOidcUser) authentication.getPrincipal();
@@ -120,14 +123,12 @@ class AppController {
     private String getAccessToken(OAuth2AuthenticationToken authentication) {
 
         String clientRegistrationId = ((OAuth2AuthenticationToken) authentication).getAuthorizedClientRegistrationId();
-        if (clientRegistrationId == null) {
+        logger.info(clientRegistrationId);
+        OAuth2AuthorizedClient oauthclient = authorizedClientService.loadAuthorizedClient(clientRegistrationId, authentication.getName());
+        if (oauthclient == null) {
             return null;
         }
-        if (authorizedClientService == null) {
-            return null;
-        }
-        OAuth2AccessToken accessToken = authorizedClientService.loadAuthorizedClient(clientRegistrationId,
-                authentication.getName()).getAccessToken();
+        OAuth2AccessToken accessToken = oauthclient.getAccessToken();
         if (accessToken == null) {
             return null;
         } else {
@@ -135,31 +136,34 @@ class AppController {
         }
     }
 
-    private void getEmailVerifiedClaim(Authentication authentication) {
+    private boolean getEmailVerifiedClaim(Authentication authentication, String accessToken) {
 
         logger.info("getEmailVerifiedClaim");
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
-        headers.setBearerAuth(getAccessToken((OAuth2AuthenticationToken) authentication));
+        headers.setBearerAuth(accessToken);
         HttpEntity<String> entity = new HttpEntity<String>(headers);
         JSONObject response = callGetAPI(scimMeEndpoint, entity);
-//        boolean emailVerified = Boolean.parseBoolean(response.get("emailVerified").toString());
-//        logger.info(response.get("emailVerified").toString());
-//        logger.info(emailVerified + "");
+        JSONObject customSchemaAttributes = (JSONObject)response.get("urn:scim:wso2:schema");
+        logger.info(customSchemaAttributes.toString());
+        if (customSchemaAttributes.get("emailVerified") == null) {
+            return false;
+        }
+        String emailVerified = (String) customSchemaAttributes.get("emailVerified");
+        return Boolean.parseBoolean(emailVerified);
     }
 
     private JSONObject callGetAPI(String url, HttpEntity<String> entity) {
 
         logger.info("get api");
-        int statusCode = restTemplate.exchange(url, HttpMethod.GET, entity, String.class).getStatusCode().value();
+        ResponseEntity<String> restApi = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
+        int statusCode = restApi.getStatusCode().value();
         logger.info(statusCode + "");
         if (statusCode == 200) {
-            String response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class).getBody();
+            String response = restApi.getBody();
             logger.info(response);
-            JSONObject jsonResponse = new JSONObject(response);
-            return jsonResponse;
+            return new JSONObject(response);
         }
         return null;
-
     }
 }
