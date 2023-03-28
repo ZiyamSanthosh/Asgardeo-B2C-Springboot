@@ -1,5 +1,7 @@
 package com.example.demo;
 
+import com.example.demo.models.Product;
+import com.example.demo.services.ProductService;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +17,9 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import java.util.Arrays;
+import java.util.List;
+
 @Controller
 class AppController {
     Logger logger = LoggerFactory.getLogger(AppController.class);
@@ -23,7 +28,8 @@ class AppController {
     private OAuth2AuthorizedClientService authorizedClientService;
 
     @GetMapping("/index")
-    public String getProfile(Model model, Authentication authentication) {
+    public String getHomePage(Model model, Authentication authentication) {
+        List<Product> products = new ProductService().getProducts();
 
         logger.info("Rendering index page");
         if (authentication == null) {
@@ -41,6 +47,7 @@ class AppController {
             }
             model.addAttribute("fullName", fullName);
         }
+        model.addAttribute("productList", products);
         return "index";
     }
 
@@ -85,4 +92,10 @@ class AppController {
         return "redirect:/profile";
     }
 
+    @RequestMapping({"/add-to-cart", "/product"})
+    public String getProductViewPage(Model model, Authentication authentication) {
+
+        logger.info("Rendering product page");
+        return "product";
+    }
 }

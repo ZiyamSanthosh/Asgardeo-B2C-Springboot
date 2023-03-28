@@ -26,7 +26,7 @@ public class ConfigSecurity extends WebSecurityConfigurerAdapter {
 
         logger.info("Configuring security");
         http.authorizeRequests()
-                .antMatchers( "/index", "/login", "/")
+                .antMatchers( "/index", "/product", "/login", "/")
                 .permitAll()
                 .anyRequest()
                 .authenticated()
