@@ -128,7 +128,12 @@ class AppController {
         headers.setBearerAuth(accessToken);
         logger.info(accessToken);
         HttpEntity<String> entity = new HttpEntity<String>(headers);
-        JSONObject response = callGetAPI(scimMeEndpoint, entity);
+        JSONObject response = null;
+        try {
+            response = callGetAPI(scimMeEndpoint, entity);
+        } catch (LoginException e) {
+            return "redirect:/login";
+        }
         logger.info(new JSONObject(response.get("name").toString()).get("givenName").toString());
         logger.info(new JSONObject(response.get("name").toString()).get("familyName").toString());
         logger.info(new JSONArray(response.getJSONArray("phoneNumbers").toString()).getJSONObject(0).get("value").toString());
@@ -166,10 +171,8 @@ class AppController {
         JSONObject response = null;
         try {
             callPatchAPI(scimMeEndpoint, user, accessToken);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
+        } catch (IOException | URISyntaxException e) {
+            return "redirect:/login";
         }
         logger.info("Profile updated successfully");
 
