@@ -10,9 +10,18 @@
 
 ## Login
 
-## User information
+## logout (sign-in, sign-out)
 
-## Profile update
+## Invoke Asgardeo self-service APIs
 
-## Application session management
+## How to get user profile information
 
+## Logged in session
+
+## How to maintain, state, session, session timeouts
+
+## Securely store and use credentials in the application side
+
+## How to deploy/host applications
+
+## How to manage configuration
