@@ -1,5 +1,6 @@
 package com.example.demo;
 
+import com.example.demo.exceptions.LoginException;
 import com.example.demo.models.Product;
 import com.example.demo.services.ProductService;
 import org.json.JSONObject;
@@ -64,10 +65,19 @@ class AppController {
             if (accessToken == null) {
                 return "redirect:/login";
             }
-            boolean emailVerified = getEmailVerifiedClaim(authentication, accessToken);
+            boolean emailVerified = false;
+            try {
+                emailVerified = getEmailVerifiedClaim(authentication, accessToken);
+            } catch (LoginException e) {
+                return "redirect:/login";
+            }
             logger.info("Email verified: " + emailVerified);
             model.addAttribute("emailVerified", emailVerified);
-            model.addAttribute("tier", getUserTier(authentication, accessToken));
+            try {
+                model.addAttribute("tier", getUserTier(authentication, accessToken));
+            } catch (LoginException e) {
+                return "redirect:/login";
+            }
 
         }
         model.addAttribute("productList", products);
@@ -117,8 +127,13 @@ class AppController {
     @RequestMapping({"/add-to-cart", "/product"})
     public String getProductViewPage(Model model, Authentication authentication) {
 
-        logger.info("Rendering product page");
-        return "product";
+        int statusCode = productService.addProduct(getAccessToken((OAuth2AuthenticationToken) authentication));
+        if (statusCode == 200) {
+            logger.info("Rendering product page");
+            return "redirect:/index";
+        } else {
+            return "redirect:/error";
+        }
     }
 
     private String getAccessToken(OAuth2AuthenticationToken authentication) {
@@ -133,11 +148,12 @@ class AppController {
         if (accessToken == null) {
             return null;
         } else {
+            logger.info("Access token:" + accessToken.getTokenValue());
             return accessToken.getTokenValue();
         }
     }
 
-    private boolean getEmailVerifiedClaim(Authentication authentication, String accessToken) {
+    private boolean getEmailVerifiedClaim(Authentication authentication, String accessToken) throws LoginException {
 
         logger.info("getEmailVerifiedClaim");
         HttpHeaders headers = new HttpHeaders();
@@ -154,7 +170,7 @@ class AppController {
         return Boolean.parseBoolean(emailVerified);
     }
 
-    private String getUserTier(Authentication authentication, String accessToken) {
+    private String getUserTier(Authentication authentication, String accessToken) throws LoginException {
 
         logger.info("GetUserTier");
         HttpHeaders headers = new HttpHeaders();
@@ -170,7 +186,7 @@ class AppController {
         return (String) customSchemaAttributes.get("tier");
     }
 
-    private JSONObject callGetAPI(String url, HttpEntity<String> entity) {
+    private JSONObject callGetAPI(String url, HttpEntity<String> entity) throws LoginException {
 
         logger.info("get api");
         ResponseEntity<String> restApi = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
@@ -180,7 +196,9 @@ class AppController {
             String response = restApi.getBody();
             logger.info(response);
             return new JSONObject(response);
+        } else {
+            logger.info("Error occurred while calling the API");
+            throw new LoginException("Error occurred while calling the API");
         }
-        return null;
     }
 }
