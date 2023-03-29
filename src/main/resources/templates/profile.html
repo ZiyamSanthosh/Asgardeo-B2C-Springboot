@@ -7,7 +7,7 @@ Online HTML, CSS and JavaScript editor to run code online.
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<!--  <link rel="stylesheet" href="style.css" />-->
+  <!--  <link rel="stylesheet" href="style.css" />-->
   <title>User Profile</title>
 </head>
 
@@ -15,39 +15,40 @@ Online HTML, CSS and JavaScript editor to run code online.
 <h1>
   User Info
 </h1>
-<table id = "info-table">
-  <tr>
-    <td>Username</td>
-    <td>
-      <input type="text" th:value="${username}">
-    </td>
-  </tr>
-  <tr>
-    <td>First Name</td>
-    <td>
-      <input type="text" th:value="${firstName}">
-    </td>
-  </tr>
-  <tr>
-    <td>Last Name</td>
-    <td>
-      <input type="text" th:value="${lastName}">
-    </td>
-  </tr>
-  <tr>
-    <td>Mobile</td>
-    <td>
-      <input type="text" th:value="${mobile}">
-    </td>
-  </tr>
-  <tr>
-    <td>Country</td>
-    <td>
-      <input type="text" th:value="${country}">
-    </td>
-  </tr>
-</table>
-<form action="#" th:action="@{/updateProfile}" method="get">
+
+<form action="#" th:action="@{/updateProfile}" th:object="${user}" method="post">
+  <table id = "info-table2">
+    <tr>
+      <td>Username</td>
+      <td>
+        <input type="text" th:field="*{username}" readonly>
+      </td>
+    </tr>
+    <tr>
+      <td>First Name</td>
+      <td>
+        <input type="text" th:field="*{firstName}">
+      </td>
+    </tr>
+    <tr>
+      <td>Last Name</td>
+      <td>
+        <input type="text" th:field="*{lastName}">
+      </td>
+    </tr>
+    <tr>
+      <td>Mobile</td>
+      <td>
+        <input type="text" th:field="*{mobile}">
+      </td>
+    </tr>
+    <tr>
+      <td>Country</td>
+      <td>
+        <input type="text" th:field="*{country}" readonly>
+      </td>
+    </tr>
+  </table>
   <input type="submit" value="Submit" />
 </form>
 </body>

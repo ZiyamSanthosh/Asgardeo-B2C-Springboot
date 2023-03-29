@@ -1,7 +1,20 @@
 package com.example.demo;
 
 import com.example.demo.models.Product;
+import com.example.demo.models.User;
 import com.example.demo.services.ProductService;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import org.apache.http.Header;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPatch;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.message.BasicHeader;
+import org.apache.http.util.EntityUtils;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +30,8 @@ import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.client.RestTemplate;
 
@@ -92,25 +107,62 @@ class AppController {
 
         logger.info("Rendering profile page");
         DefaultOidcUser userDetails = (DefaultOidcUser) authentication.getPrincipal();
-        model.addAttribute("username", userDetails.getClaim("username"));
-        model.addAttribute("firstName", userDetails.getClaim("given_name"));
-        model.addAttribute("lastName", userDetails.getClaim("family_name"));
-        model.addAttribute("mobile", userDetails.getClaim("phone_number"));
-        if (userDetails.getClaim("address") != null) {
-            model.addAttribute("country", new JSONObject(userDetails.getClaim("address").toString()).get("country"));
+
+        String accessToken = getAccessToken((OAuth2AuthenticationToken) authentication);
+        if (accessToken == null) {
+            return "redirect:/login";
         }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        headers.setBearerAuth(accessToken);
+        logger.info(accessToken);
+        HttpEntity<String> entity = new HttpEntity<String>(headers);
+        JSONObject response = callGetAPI(scimMeEndpoint, entity);
+        logger.info(new JSONObject(response.get("name").toString()).get("givenName").toString());
+        logger.info(new JSONObject(response.get("name").toString()).get("familyName").toString());
+        logger.info(new JSONArray(response.getJSONArray("phoneNumbers").toString()).getJSONObject(0).get("value").toString());
+
+        User user = new User();
+        user.setUsername(userDetails.getClaim("username"));
+        if (userDetails.getClaim("address") != null) {
+            user.setCountry(new JSONObject(userDetails.getClaim("address").toString()).get("country").toString());
+        }
+        user.setFirstName(new JSONObject(response.get("name").toString()).get("givenName").toString());
+        user.setLastName(new JSONObject(response.get("name").toString()).get("familyName").toString());
+        user.setMobile(new JSONArray(response.getJSONArray("phoneNumbers").toString()).getJSONObject(0).get("value").toString());
+
+        model.addAttribute("user", user);
+
+        logger.info(response.toString() + "getProfile");
 
         return "profile";
     }
 
 
-    @GetMapping("/updateProfile")
-    public String updateProfile(Authentication authentication) throws Exception {
+    @PostMapping("/updateProfile")
+    public String updateProfile(Authentication authentication, @ModelAttribute User user) {
 
         logger.info("updateProfile");
-        System.out.println("updateProfile");
+        logger.info(user.toString());
 
         String accessToken = getAccessToken((OAuth2AuthenticationToken) authentication);
+        if (accessToken == null) {
+            return "redirect:/login";
+        }
+
+        logger.info(buildUpdateScimBody(user).toString());
+
+        JSONObject response = null;
+        try {
+            callPatchAPI(scimMeEndpoint, user, accessToken);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+        logger.info("Profile updated successfully");
+
         return "redirect:/profile";
     }
 
@@ -143,6 +195,7 @@ class AppController {
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
         headers.setBearerAuth(accessToken);
+        logger.info(accessToken);
         HttpEntity<String> entity = new HttpEntity<String>(headers);
         JSONObject response = callGetAPI(scimMeEndpoint, entity);
         JSONObject customSchemaAttributes = (JSONObject)response.get("urn:scim:wso2:schema");
@@ -182,5 +235,63 @@ class AppController {
             return new JSONObject(response);
         }
         return null;
+    }
+
+    private JSONObject callPatchAPI(String url, User user, String accessToken)
+            throws IOException, URISyntaxException {
+
+        URI uri = new URI(url);
+        HttpPatch request = new HttpPatch(uri);
+
+        Header[] headers = {
+                new BasicHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE),
+                new BasicHeader(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+        };
+        request.setHeaders(headers);
+
+        StringEntity body = new StringEntity(buildUpdateScimBody(user).toString());
+        request.setEntity(body);
+
+        HttpClient httpClient = HttpClientBuilder.create().build();
+        HttpResponse response = httpClient.execute(request);
+        org.apache.http.HttpEntity entity1 = response.getEntity();
+
+        String responseString = EntityUtils.toString(entity1, "UTF-8");
+        logger.info(responseString + "    hi");
+        return null;
+    }
+
+    private JSONObject buildUpdateScimBody(User user) {
+
+        JSONObject body = new JSONObject();
+        body.put("schemas", new JSONArray().put("urn:ietf:params:scim:api:messages:2.0:PatchOp"));
+
+        JSONArray operations = new JSONArray();
+
+        JSONObject operation1 = new JSONObject();
+        operation1.put("op", "replace");
+        JSONObject value1 = new JSONObject();
+        JSONObject names = new JSONObject();
+        names.put("givenName", user.getFirstName());
+        names.put("familyName", user.getLastName());
+        value1.put("name", names);
+        operation1.put("value", value1);
+        operations.put(operation1);
+
+        JSONObject operation2 = new JSONObject();
+        operation2.put("op", "replace");
+        JSONObject value2 = new JSONObject();
+        JSONArray numbers = new JSONArray();
+        JSONObject phoneNumber = new JSONObject();
+        phoneNumber.put("type", "mobile");
+        phoneNumber.put("value", user.getMobile());
+        numbers.put(phoneNumber);
+        value2.put("phoneNumbers", numbers);
+        operation2.put("value", value2);
+        operations.put(operation2);
+
+        body.put("Operations", operations);
+
+        return body;
     }
 }
